@@ -1,6 +1,7 @@
 # app/schemas.py
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
+from typing import Optional, Generic, TypeVar
 
 # =========================
 # AUTH
@@ -21,10 +22,6 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True  # Pydantic v2
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -34,9 +31,9 @@ class Token(BaseModel):
 # ANALYSIS
 # =========================
 class AnalysisCreate(BaseModel):
-    label: str = Field(..., max_length=50)          # Basah/Kering/non
-    confidence: float = Field(..., ge=0.0, le=1.0)  # 0..1
-    save_history: bool = True                       # user pilih simpan / tidak
+    label: str = Field(..., max_length=50)
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    save_history: bool = True
 
 class AnalysisPreview(BaseModel):
     label: str
@@ -53,5 +50,18 @@ class AnalysisOut(BaseModel):
         from_attributes = True
 
 
-# Kalau kamu masih ada import lama "AnalysisResponse", biar tidak error:
-AnalysisResponse = AnalysisOut
+# =========================
+# RESPONSE WRAPPER (WAJIB DI BAWAH)
+# =========================
+T = TypeVar("T")
+
+class ApiResponse(BaseModel, Generic[T]):
+    success: bool
+    message: str
+    data: Optional[T] = None
+
+class RegisterResponse(ApiResponse[UserOut]):
+    pass
+
+class LoginResponse(ApiResponse[Token]):
+    pass
