@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pymysql
+python-dotenv
+passlib[bcrypt]
+python-jose[cryptography]
+pydantic
+email-validator
+numpy
+librosa
+tensorflow
+SQLAlchemy
+PyMySQL
+python-dotenv
+opencv-python
+
