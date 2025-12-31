@@ -9,9 +9,14 @@ from app.auth import hash_password, verify_password, create_access_token
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/register", response_model=schemas.RegisterResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=schemas.RegisterResponse,
+    status_code=status.HTTP_201_CREATED
+)
 def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
 
+    # bcrypt limit 72 bytes
     if len(payload.password.encode("utf-8")) > 72:
         raise HTTPException(status_code=400, detail="Password maksimal 72 karakter")
 
@@ -34,20 +39,38 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
     return {
         "success": True,
         "message": "Registrasi berhasil",
-        "data": user  # akan difilter jadi UserOut oleh response_model
+        "data": user
     }
 
 
-@router.post("/login", response_model=schemas.LoginResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/login",
+    response_model=schemas.LoginResponse,
+    status_code=status.HTTP_200_OK
+)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
+    # cari user by username
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
 
-    if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Username/password salah")
+    # ✅ kalau username tidak ditemukan
+    if not user:
+        # response FastAPI default: {"detail":"..."}
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Akun tidak ditemukan"
+        )
 
+    # ✅ kalau password salah
+    if not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Password salah"
+        )
+
+    # ✅ sukses
     token = create_access_token({"sub": str(user.id)})
 
     return {
